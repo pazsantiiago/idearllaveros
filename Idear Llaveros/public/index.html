@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#E3FCD3">
+<title>Diseñá tu llavero | Idear Gráfica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bungee+Inline&family=Cherry+Bomb+One&family=Graduate&family=Montserrat:wght@900&family=New+Rocker&family=Pacifico&display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js"}}</script>
+<style>
+:root {
+  --primary: #68b31a; 
+  --dark: #192b0c; 
+  --page: #E3FCD3;
+  --muted: #536946; 
+  --line: #d8ebd0;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; 
+  background: #E3FCD3;
+  font-family: Inter, system-ui, -apple-system, sans-serif; 
+  color: var(--dark);
+}
+button, input, select { font: inherit; }
+.wrap { width: min(1120px, calc(100% - 24px)); margin: auto; padding: 12px 0 24px; }
+.header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.logo-container { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; }
+.logo { max-width: 100%; max-height: 100%; object-fit: contain; }
+.head h1 { font-size: clamp(20px, 3.5vw, 28px); margin: 0; letter-spacing: -.03em; }
+.head p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+
+/* Configuración de Layout responsivo */
+.layout { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(310px, .9fr); gap: 14px; }
+.panel {
+  background: #fffffffa; border: 1px solid var(--line); border-radius: 18px; padding: 16px;
+  box-shadow: 0 8px 24px rgba(40, 80, 20, 0.05); min-width: 0;
+}
+.panel h2 { font-size: 16px; margin: 0 0 4px; }
+.sub { font-size: 11px; color: var(--muted); margin: 0 0 10px; }
+
+/* Escenario 3D compacto para encajar en pantalla de celular */
+.stage {
+  height: clamp(260px, 40vw, 420px); position: relative; border-radius: 14px; overflow: hidden;
+  background: radial-gradient(ellipse, #ffffff 0, #f2faf0 70%, #e2f5dc 100%); 
+  border: 1px solid #d4ebd0;
+}
+#view { position: absolute; inset: 0; touch-action: none; }
+#view canvas { width: 100%; height: 100%; display: block; outline: none; }
+.hint {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  white-space: nowrap; background: #ffffffee; border: 1px solid var(--line);
+  padding: 6px 10px; border-radius: 99px; color: var(--muted); font-size: 10px; pointer-events: none;
+}
+
+.section { padding: 10px 0; border-top: 1px solid #e3f2df; }
+.section:first-of-type { border-top: 0; padding-top: 0; }
+.label { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; font-weight: 800; margin-bottom: 6px; }
+.muted { font-size: 10px; color: #536946; font-weight: 500; }
+.field {
+  width: 100%; padding: 8px 10px; border: 1px solid #cce5c7; border-radius: 10px;
+  background: #fff; color: var(--dark); outline-color: var(--primary); font-size: 13px;
+}
+.emojis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+.emoji {
+  min-height: 44px; border: 1px solid #cce5c7; background: white; border-radius: 8px;
+  cursor: pointer; font-size: 18px; transition: 0.2s; padding: 2px;
+}
+.emoji small { display: block; font-size: 8px; color: #536946; }
+.emoji[aria-pressed=true] { border: 2px solid var(--primary); background: #ebf7e6; }
+
+.colors { display: flex; flex-wrap: wrap; gap: 8px; }
+.color { width: 26px; height: 26px; border-radius: 50%; border: 2px solid white; outline: 1px solid #cce5c7; cursor: pointer; }
+.color[aria-pressed=true] { outline: 2px solid var(--primary); transform: scale(1.1); }
+
+.help { font-size: 10px; line-height: 1.3; color: #536946; margin: 4px 0 0; }
+.whats {
+  width: 100%; border: 0; border-radius: 11px; background: var(--primary); color: white;
+  padding: 12px; font-weight: 800; cursor: pointer; margin-top: 10px; transition: 0.2s; font-size: 13px;
+}
+.whats:hover { background: #569814; }
+.whats:disabled { opacity: .72; cursor: wait; }
+.price-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  margin-top: 10px; padding: 9px 12px; border: 1px solid #d8ebd0; border-radius: 10px;
+  background: #f7fcf4; font-size: 13px; color: var(--dark);
+}
+.price-row strong { font-size: 18px; color: #4d9412; }
+.payment-card {
+  display: grid; gap: 9px; margin-top: 8px; padding: 14px; border: 2px solid #68B31A;
+  border-radius: 18px; background: #fff; font-size: 12px; line-height: 1.4;
+  box-shadow: 0 5px 16px rgba(40, 80, 20, 0.08);
+}
+.payment-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.payment-head strong { font-size: 14px; color: var(--dark); }
+.payment-logo { display: block; width: 54px; height: 54px; flex: 0 0 54px; object-fit: contain; border-radius: 50%; }
+.payment-details { display: grid; gap: 4px; }
+.payment-details b { color: #3f8210; }
+.payment-card small { color: var(--muted); }
+.save { border: 1px solid #cce5c7; background: white; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 11px; }
+.under { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: 10px; color: #536946; }
+.foot { text-align: center; color: #536946; font-size: 10px; padding: 12px; }
+.range-wrap { display: flex; align-items: center; gap: 8px; }
+.range-wrap input { flex: 1; accent-color: #68B31A; } input[type="range"] { accent-color: #68B31A; }
+
+@media(max-width: 800px) { 
+  .layout { grid-template-columns: 1fr; } 
+  .stage { height: clamp(260px, 58vw, 380px); } 
+  .panel { padding: 12px; } 
+  .logo-container { width: 56px; height: 56px; flex: 0 0 56px; }
+  .hint { max-width: calc(100% - 16px); white-space: normal; text-align: center; }
+  .emojis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="header">
+    <div class="logo-container">
+      <!-- Reemplazá logo_iderear.png por tu PNG transparente cuando lo tengas -->
+      <img class="logo" src="idearlogo.png" alt="Idear Gráfica" decoding="async">
+    </div>
+    <div class="head">
+      <h1>Diseñá tu llavero</h1>
+      <p>Personalizá el texto, silueta y posición del ojal en tiempo real.</p>
+    </div>
+  </header>
+  
+  <div class="layout">
+    <!-- PANEL DE VISTA PREVIA (Arriba en celular) -->
+    <section class="panel">
+      <h2>Vista previa 3D</h2>
+      <p class="sub">Arrastrá para girar el llavero en 360°.</p>
+      <div class="stage">
+        <div id="view" aria-label="Vista 3D del llavero"></div>
+        <div class="hint">↔ Arrastrá para rotar · pellizcá para acercar</div>
+      </div>
+      <div class="under">
+        <span>Contorno tipo Offset adaptable a la letra.</span>
+        <button id="save" class="save">Guardar PNG</button>
+      </div>
+    </section>
+    
+    <!-- PANEL DE CONTROLES (Ordenado estratégicamente) -->
+    <section class="panel">
+      <h2>Personalizá tu diseño</h2>
+      
+      <!-- 1. TEXTO Y COLOR DEL NOMBRE -->
+      <div class="section">
+        <div class="label"><label for="name">1. Texto o nombre</label><span id="count" class="muted">6/18</span></div>
+        <input id="name" class="field" maxlength="18" value="Nicole" autocomplete="off">
+        <div style="margin-top:8px">
+          <div class="label"><label for="font">Tipografía del nombre</label><span class="muted">7 opciones gratis</span></div>
+          <select id="font" class="field" aria-label="Elegí la tipografía del nombre">
+            <option value="pacifico">Pacifico · actual</option>
+            <option value="montserrat">Montserrat Black</option>
+            <option value="graduate">Graduate · estilo College</option>
+            <option value="anton">Anton · gruesa y compacta</option>
+            <option value="cherry">Cherry Bomb One</option>
+            <option value="bungee">Bungee Inline</option>
+            <option value="newrocker">New Rocker</option>
+          </select>
+        </div>
+        
+        <div style="margin-top: 8px;">
+          <div class="label"><span>Color del texto / nombre</span><span id="textColorName" class="muted">Blanco</span></div>
+          <div class="colors" id="textColors">
+            <button class="color" title="Blanco" data-color="#ffffff" aria-pressed="true" style="background:#ffffff"></button>
+            <button class="color" title="Negro" data-color="#111111" aria-pressed="false" style="background:#111111"></button>
+            <button class="color" title="Dorado / Amarillo" data-color="#ffd700" aria-pressed="false" style="background:#ffd700"></button>
+            <button class="color" title="Rojo" data-color="#e62222" aria-pressed="false" style="background:#e62222"></button>
+            <button class="color" title="Azul" data-color="#1e50e6" aria-pressed="false" style="background:#1e50e6"></button>
+            <button class="color" title="Rosa" data-color="#ff69b4" aria-pressed="false" style="background:#ff69b4"></button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 2. GROSOR DEL CONTORNO (SILUETA) -->
+      <div class="section">
+        <div class="label"><span>2. Grosor del contorno (Silueta)</span><span id="thickVal" class="muted">Fino / Estándar</span></div>
+        <div class="range-wrap">
+          <input type="range" id="thickness" class="field" min="30" max="90" step="2" value="65">
+        </div>
+        <p class="help">El límite de grosor evita huecos pequeños y mantiene una silueta más firme para imprimir.</p>
+      </div>
+      
+      <!-- 3. POSICIÓN Y TAMAÑO DEL OJAL -->
+      <div class="section">
+        <div class="label"><span>3. Posición y Tamaño del ojal</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <label class="muted" for="holeX">Horizontal (Izq / Der)</label>
+            <input type="range" id="holeX" class="field" min="-450" max="450" step="5" value="-220">
+          </div>
+          <div>
+            <label class="muted" for="holeY">Vertical (Arriba / Abajo)</label>
+            <input type="range" id="holeY" class="field" min="-80" max="220" step="5" value="110">
+          </div>
+        </div>
+        <div style="margin-top:6px;">
+          <label class="muted" for="holeSize">Tamaño del Ojal (Diámetro)</label>
+          <input type="range" id="holeSize" class="field" min="20" max="60" step="2" value="36">
+        </div>
+      </div>
+      
+      <!-- 4. COLOR DE LA BASE -->
+      <div class="section">
+        <div class="label"><span>4. Color de la base</span><span id="colorname" class="muted">Rosa Fucsia</span></div>
+        <div class="colors" id="colors">
+          <button class="color" title="Rosa Fucsia" data-color="#f22c89" aria-pressed="true" style="background:#f22c89"></button>
+          <button class="color" title="Verde Claro" data-color="#8ce655" aria-pressed="false" style="background:#8ce655"></button>
+          <button class="color" title="Rosa Pastel" data-color="#ffb6c1" aria-pressed="false" style="background:#ffb6c1"></button>
+          <button class="color" title="Violeta" data-color="#8a2be2" aria-pressed="false" style="background:#8a2be2"></button>
+          <button class="color" title="Blanco" data-color="#f5f4ee" aria-pressed="false" style="background:#f5f4ee"></button>
+          <button class="color" title="Negro" data-color="#242424" aria-pressed="false" style="background:#242424"></button>
+          <button class="color" title="Rojo" data-color="#d94343" aria-pressed="false" style="background:#d94343"></button>
+          <button class="color" title="Naranja" data-color="#ff8c00" aria-pressed="false" style="background:#ff8c00"></button>
+          <button class="color" title="Celeste" data-color="#00bfff" aria-pressed="false" style="background:#00bfff"></button>
+          <button class="color" title="Azul" data-color="#3564e8" aria-pressed="false" style="background:#3564e8"></button>
+        </div>
+      </div>
+
+      <!-- 5. ÍCONO / EMOJI (AL FINAL) -->
+      <div class="section">
+        <div class="label"><span>5. Elegí un ícono</span><span class="muted">Al final · color del texto</span></div>
+        <div id="emojis" class="emojis">
+          <button class="emoji" data-emoji="" aria-pressed="true">×<small>Ninguno</small></button>
+          <button class="emoji" data-emoji="★" aria-pressed="false">★<small>Estrella</small></button>
+          <button class="emoji" data-emoji="♥" aria-pressed="false">♥<small>Corazón</small></button>
+          <button class="emoji" data-emoji="♫" aria-pressed="false">♫<small>Música</small></button>
+          <button class="emoji" data-emoji="☻" aria-pressed="false">☻<small>Sonrisa</small></button>
+          <button class="emoji" data-emoji="♣" aria-pressed="false">♣<small>Trébol</small></button>
+          <button class="emoji" data-emoji="✿" aria-pressed="false">✿<small>Flor</small></button>
+          <button class="emoji" data-emoji="◆" aria-pressed="false">◆<small>Diamante</small></button>
+          <button class="emoji" data-emoji="☾" aria-pressed="false">☾<small>Luna</small></button>
+        </div>
+      </div>
+      
+      <div class="price-row"><span>Precio estándar</span><strong>$2.500</strong></div>
+      <button id="order" class="whats">Enviar por WhatsApp</button>
+      <p id="orderHelp" class="help" style="text-align:center">La imagen se compartirá por un enlace temporal de 24 horas y se abrirá el chat directo.</p>
+      <div class="payment-card" aria-label="Datos para transferir">
+        <div class="payment-head">
+          <strong>Datos para transferir</strong>
+          <img class="payment-logo" src="mercadopago.png" alt="Mercado Pago" width="54" height="54" loading="lazy">
+        </div>
+        <div class="payment-details">
+          <span>Alias: <b>grafica.idear.mp</b></span>
+          <span>Nombre: Grisel Marine Hahs</span>
+        </div>
+        <small>Compartí el comprobante una vez hecho el pago.</small>
+      </div>
+    </section>
+  </div>
+  <footer class="foot">Idear Gráfica · Personalización a tu medida</footer>
+</main>
+
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/controls/OrbitControls.js';
+
+const WHATSAPP_NUMBER = '5493735302900'; 
+const $= id => document.getElementById(id), host =$('view');
+let color = '#f22c89', colorName = 'Rosa Fucsia';
+let textColor = '#ffffff', textColorName = 'Blanco';
+let emoji = '', model, renderer, scene, camera, controls;
+const FONT_OPTIONS = {
+  pacifico: {label:'Pacifico', canvas:'bold 140px "Pacifico", cursive'},
+  montserrat: {label:'Montserrat Black', canvas:'900 140px "Montserrat", sans-serif'},
+  graduate: {label:'Graduate (estilo College)', canvas:'400 140px "Graduate", serif'},
+  anton: {label:'Anton', canvas:'400 140px "Anton", sans-serif'},
+  cherry: {label:'Cherry Bomb One', canvas:'400 140px "Cherry Bomb One", cursive'},
+  bungee: {label:'Bungee Inline', canvas:'400 140px "Bungee Inline", sans-serif'},
+  newrocker: {label:'New Rocker', canvas:'400 140px "New Rocker", cursive'}
+};
+
+scene = new THREE.Scene(); scene.background = null;
+camera = new THREE.PerspectiveCamera(32, 1, .1, 100); camera.position.set(0, 0, 9);
+renderer = new THREE.WebGLRenderer({antialias:true, alpha:true, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75)); renderer.outputColorSpace = THREE.SRGBColorSpace;
+host.appendChild(renderer.domElement);
+
+const ambient = new THREE.AmbientLight(0xffffff, 1.2); scene.add(ambient);
+const light = new THREE.DirectionalLight(0xffffff, 1.8); light.position.set(-2, 4, 6); scene.add(light);
+controls = new OrbitControls(camera, renderer.domElement); 
+controls.enableDamping = true; controls.minDistance = 4; controls.maxDistance = 15;
+
+function dispose(){
+  if(model){
+    model.traverse(o=>{
+      if(o.geometry) o.geometry.dispose();
+      if(o.material){
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        mats.forEach(m => {
+          if(m.map) m.map.dispose();
+          m.dispose();
+        });
+      }
+    });
+    scene.remove(model);
+  }
+  model = new THREE.Group(); scene.add(model);
+}
+
+// Rellena los huecos transparentes cerrados dentro de las letras para que
+// las contraformas (como el centro de la "o") queden apoyadas en material.
+function fillEnclosedTransparentRegions(ctx, left, top, right, bottom){
+  const x = Math.max(0, Math.floor(left));
+  const y = Math.max(0, Math.floor(top));
+  const width = Math.min(ctx.canvas.width, Math.ceil(right)) - x;
+  const height = Math.min(ctx.canvas.height, Math.ceil(bottom)) - y;
+  if(width <= 0 || height <= 0) return;
+
+  const image = ctx.getImageData(x, y, width, height);
+  const pixels = image.data;
+  const count = width * height;
+  const visited = new Uint8Array(count);
+  const queue = new Int32Array(count);
+  let head = 0, tail = 0;
+  const enqueue = index => {
+    if(!visited[index] && pixels[index * 4 + 3] === 0){
+      visited[index] = 1;
+      queue[tail++] = index;
+    }
+  };
+
+  for(let px = 0; px < width; px++){
+    enqueue(px);
+    enqueue((height - 1) * width + px);
+  }
+  for(let py = 0; py < height; py++){
+    enqueue(py * width);
+    enqueue(py * width + width - 1);
+  }
+  while(head < tail){
+    const index = queue[head++];
+    const px = index % width;
+    if(px > 0) enqueue(index - 1);
+    if(px + 1 < width) enqueue(index + 1);
+    if(index >= width) enqueue(index - width);
+    if(index + width < count) enqueue(index + width);
+  }
+
+  for(let index = 0; index < count; index++){
+    if(pixels[index * 4 + 3] === 0 && !visited[index]){
+      const offset = index * 4;
+      pixels[offset] = pixels[offset + 1] = pixels[offset + 2] = 255;
+      pixels[offset + 3] = 255;
+    }
+  }
+  ctx.putImageData(image, x, y);
+}
+
+function update(){
+  dispose();
+  const nameVal = $('name').value.trim() || 'Nicole';
+  const selectedFont = FONT_OPTIONS[$('font').value] || FONT_OPTIONS.pacifico;
+  const thickVal = parseInt($('thickness').value);
+  const hx = parseFloat($('holeX').value);
+  const hy = parseFloat($('holeY').value);
+  const holeDiameter = parseFloat($('holeSize').value);
+  const innerHoleRadius = holeDiameter / 2;
+
+  // Resoluciones de la textura 2D
+  const W = 1200, H = 600;
+  const CX = W / 2, CY = H / 2;
+
+  /* === 1. DIBUJAR BASE Y AJUSTAR ÍCONO PEAGADO Y UNIDO === */
+  const bCan = document.createElement('canvas'); bCan.width = W; bCan.height = H;
+  const bCtx = bCan.getContext('2d');
+  
+  bCtx.font = selectedFont.canvas;
+  bCtx.lineJoin = 'round'; bCtx.lineCap = 'round';
+  bCtx.fillStyle = '#ffffff';
+  bCtx.strokeStyle = '#ffffff';
+  bCtx.lineWidth = thickVal;
+
+  // Centrar el nombre y el ícono como una sola composición, con el ícono al final.
+  const preferredTextMetrics = bCtx.measureText(nameVal);
+  const iconFont = 'bold 110px sans-serif';
+  const iconWidth = 90;
+  const iconGap = 4;
+  const textTargetWidth = W * 0.84 - (emoji ? iconWidth + iconGap : 0);
+  const nameFontSize = Math.min(140, 140 * textTargetWidth / Math.max(1, preferredTextMetrics.width));
+  const nameFont = selectedFont.canvas.replace('140px', `${nameFontSize}px`);
+  bCtx.font = nameFont;
+  const textMetrics = bCtx.measureText(nameVal);
+  const textWidth = textMetrics.width;
+  let iconX = CX, textX = CX, iconMetrics = null;
+  if(emoji) {
+    const totalW = textWidth + iconGap + iconWidth;
+    textX = CX - totalW / 2 + textWidth / 2;
+    iconX = CX - totalW / 2 + textWidth + iconGap + iconWidth / 2;
+    bCtx.font = iconFont;
+    iconMetrics = bCtx.measureText(emoji);
+  }
+
+  // El texto del nombre y el ícono comparten una base única.
+  bCtx.font = nameFont;
+  bCtx.textAlign = 'center'; bCtx.textBaseline = 'middle';
+  bCtx.strokeText(nameVal, textX, CY);
+  bCtx.fillText(nameVal, textX, CY);
+  if(emoji) {
+    bCtx.font = iconFont;
+    bCtx.strokeText(emoji, iconX, CY);
+    bCtx.fillText(emoji, iconX, CY);
+
+    // Puente redondeado para que nombre e ícono formen una sola pieza imprimible.
+    const nameRight = textX + textMetrics.actualBoundingBoxRight;
+    const iconLeft = iconX - iconMetrics.actualBoundingBoxLeft;
+    if(iconLeft > nameRight) {
+      bCtx.beginPath();
+      bCtx.moveTo(nameRight, CY);
+      bCtx.lineTo(iconLeft, CY);
+      bCtx.lineWidth = Math.max(30, thickVal);
+      bCtx.lineCap = 'round';
+      bCtx.stroke();
+    }
+  }
+
+  // Cerrar las contraformas antes de dibujar el ojal: así el ojal sigue
+  // siendo un agujero real y solo los huecos internos de las letras se rellenan.
+  const compositionWidth = textWidth + (emoji ? iconGap + iconWidth : 0);
+  const maskPadding = thickVal + 12;
+  fillEnclosedTransparentRegions(
+    bCtx,
+    CX - compositionWidth / 2 - maskPadding,
+    CY - 190 - maskPadding,
+    CX + compositionWidth / 2 + maskPadding,
+    CY + 190 + maskPadding
+  );
+
+  // Posición del ojal
+  const holeCX = CX + hx;
+  const holeCY = CY - hy;
+  
+  // Anillo circular: el slider controla el radio libre; el margen exterior queda separado.
+  const holeBorder = Math.max(6, thickVal / 2.2);
+  const outerHoleRadius = innerHoleRadius + holeBorder;
+  bCtx.fillStyle = '#ffffff';
+  bCtx.beginPath();
+  bCtx.arc(holeCX, holeCY, outerHoleRadius, 0, Math.PI * 2);
+  bCtx.fill();
+
+  // Perforar el centro con el mismo centro y un radio que sigue al slider.
+  bCtx.globalCompositeOperation = 'destination-out';
+  bCtx.beginPath();
+  bCtx.arc(holeCX, holeCY, innerHoleRadius, 0, Math.PI * 2);
+  bCtx.fill();
+  bCtx.globalCompositeOperation = 'source-over';
+
+  const baseTex = new THREE.CanvasTexture(bCan);
+  baseTex.colorSpace = THREE.SRGBColorSpace;
+
+  /* === 2. DIBUJAR TEXTO / NOMBRE E ÍCONO (COLOR PERSONALIZABLE) === */
+  const tCan = document.createElement('canvas'); tCan.width = W; tCan.height = H;
+  const tCtx = tCan.getContext('2d');
+  tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
+  tCtx.fillStyle = textColor;
+  tCtx.font = nameFont;
+  tCtx.fillText(nameVal, textX, CY);
+  if(emoji) {
+    tCtx.font = iconFont;
+    tCtx.fillText(emoji, iconX, CY);
+  }
+
+  const textTex = new THREE.CanvasTexture(tCan);
+  textTex.colorSpace = THREE.SRGBColorSpace;
+
+  /* === 3. RENDERIZADO EN 3D === */
+  const matBase = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(color), map: baseTex,
+    alphaTest: 0.25, alphaToCoverage: true, roughness: 0.5, metalness: 0.1, side: THREE.DoubleSide
+  });
+  const matText = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(textColor), map: textTex,
+    alphaTest: 0.25, alphaToCoverage: true, roughness: 0.2, side: THREE.DoubleSide
+  });
+
+  const planeW = 6.4, planeH = 3.2;
+  const planeGeo = new THREE.PlaneGeometry(planeW, planeH);
+  const dummy = new THREE.Object3D();
+
+  // Extrusión 3D Base
+  const layersBase = 22; const depthBase = 0.20;
+  const instBase = new THREE.InstancedMesh(planeGeo, matBase, layersBase);
+  for(let i=0; i<layersBase; i++) {
+    dummy.position.set(0, 0, (i / layersBase) * depthBase);
+    dummy.updateMatrix();
+    instBase.setMatrixAt(i, dummy.matrix);
+  }
+  model.add(instBase);
+
+  // Extrusión 3D Texto / Nombre
+  const layersText = 8; const depthText = 0.07;
+  const instText = new THREE.InstancedMesh(planeGeo, matText, layersText);
+  for(let i=0; i<layersText; i++) {
+    dummy.position.set(0, 0, depthBase + (i / layersText) * depthText);
+    dummy.updateMatrix();
+    instText.setMatrixAt(i, dummy.matrix);
+  }
+  model.add(instText);
+
+  /* === 4. AROS METÁLICOS === */
+  const ring3DX = (holeCX - CX) / W * planeW;
+  const ring3DY = -(holeCY - CY) / H * planeH;
+  
+  const metalMat = new THREE.MeshStandardMaterial({color: 0xe0e0e0, metalness: 1.0, roughness: 0.15});
+  
+  // Anillo fino interno
+  const ringRadius3D = (innerHoleRadius / W) * planeW;
+  const fixedRing = new THREE.Mesh(new THREE.TorusGeometry(ringRadius3D, 0.03, 16, 40), metalMat);
+  fixedRing.position.set(ring3DX, ring3DY, depthBase / 2);
+  model.add(fixedRing);
+
+controls.target.set(0, 0, 0);
+  renderer.render(scene, camera);
+}
+
+let updateFrame = 0;
+function queueUpdate(){
+  if(updateFrame) return;
+  updateFrame = requestAnimationFrame(()=>{ updateFrame = 0; update(); });
+}
+
+function resize(){
+  const w = Math.max(1, host.clientWidth), h = Math.max(1, host.clientHeight);
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+}
+new ResizeObserver(resize).observe(host);
+window.addEventListener('resize', resize);
+
+function loop(){
+  requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera);
+}
+
+document.fonts.load(FONT_OPTIONS.pacifico.canvas).then(()=>{ update(); }); setTimeout(update, 150);
+
+// Escuchadores de eventos de la interfaz
+$('name').addEventListener('input', ()=>{$('count').textContent=$('name').value.length+'/18'; queueUpdate(); });$('thickness').addEventListener('input', ()=>{
+  const val = parseInt($('thickness').value);$('thickVal').textContent = val < 50 ? 'Fino' : (val > 75 ? 'Amplio' : 'Fino / Estándar');
+  queueUpdate();
+});
+$('font').addEventListener('change', async ()=>{
+  const selectedFont = FONT_OPTIONS[$('font').value] || FONT_OPTIONS.pacifico;
+  await document.fonts.load(selectedFont.canvas);
+  queueUpdate();
+});
+$('holeX').addEventListener('input', queueUpdate);
+$('holeY').addEventListener('input', queueUpdate);$('holeSize').addEventListener('input', queueUpdate);
+
+$('emojis').addEventListener('click', e=>{
+  const b = e.target.closest('[data-emoji]'); if(!b) return;
+  emoji = b.dataset.emoji;
+  $('emojis').querySelectorAll('[data-emoji]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  queueUpdate();
+});
+
+$('colors').addEventListener('click', e=>{
+  const b = e.target.closest('[data-color]'); if(!b) return;
+  color = b.dataset.color; colorName = b.title;
+  $('colorname').textContent = colorName;
+  $('colors').querySelectorAll('[data-color]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  queueUpdate();
+});
+
+$('textColors').addEventListener('click', e=>{
+  const b = e.target.closest('[data-color]'); if(!b) return;
+  textColor = b.dataset.color; textColorName = b.title;
+  $('textColorName').textContent = textColorName;
+  $('textColors').querySelectorAll('[data-color]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  queueUpdate();
+});
+
+function renderFrontImage(mimeType = 'image/png'){
+  const exportRenderer = new THREE.WebGLRenderer({antialias:true, alpha:true, preserveDrawingBuffer:true});
+  exportRenderer.setPixelRatio(1);
+  exportRenderer.setSize(1600, 800, false);
+  exportRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  if(mimeType === 'image/jpeg') exportRenderer.setClearColor(0xffffff, 1);
+  const halfH = 1.84, halfW = halfH * 2;
+  const frontCamera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.1, 100);
+  frontCamera.position.set(0, 0, 9);
+  frontCamera.lookAt(0, 0, 0);
+  exportRenderer.render(scene, frontCamera);
+  const dataUrl = exportRenderer.domElement.toDataURL(mimeType, 0.94);
+  exportRenderer.dispose();
+  const encoded = dataUrl.split(',')[1];
+  const binary = atob(encoded);
+  const bytes = new Uint8Array(binary.length);
+  for(let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], {type:mimeType});
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.download = filename; a.href = url; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+$('save').addEventListener('click', async ()=>{
+  try { downloadBlob(renderFrontImage('image/png'), 'llavero-iderear-frontal.png'); }
+  catch(error) { alert('No se pudo generar el PNG frontal. Intentá nuevamente.'); }
+});
+
+$('order').addEventListener('click', async ()=>{
+  const customerName = $('name').value.trim() || 'Nicole';
+  const msgLines = [
+    'Hola, Idear Gráfica. Quiero este llavero 3D personalizado.',
+    'Nombre o texto: ' + customerName,
+    'Tipografía: ' + (FONT_OPTIONS[$('font').value] || FONT_OPTIONS.pacifico).label,
+    'Color del texto: ' + textColorName,
+    'Color de la base: ' + colorName,
+    'Ícono: ' + (emoji || 'Ninguno'),
+    'Precio estándar: $2.500',
+    '',
+    'Alias: grafica.idear.mp',
+    'Titular: Grisel Marine Hahs',
+    'Compartiré el comprobante una vez hecho el pago.'
+  ].join('\n');
+  const button = $('order');
+  const help = $('orderHelp');
+  let whatsappWindow = null;
+  button.disabled = true;
+  button.textContent = 'Preparando imagen…';
+  try {
+    // Abrir la pestaña ahora evita que el navegador bloquee la navegación tras la subida.
+    whatsappWindow = window.open('about:blank', '_blank');
+    if(!whatsappWindow){
+      throw new Error('POPUP_BLOCKED');
+    }
+    whatsappWindow.document.title = 'Preparando WhatsApp';
+    whatsappWindow.document.body.textContent = 'Preparando tu pedido…';
+
+    const blob = renderFrontImage('image/jpeg');
+    const formData = new FormData();
+    formData.append('image', blob, 'llavero-idear-frontal.jpg');
+    const upload = await fetch('/.netlify/functions/design-image', {
+      method: 'POST',
+      body: formData
+    });
+    const result = await upload.json().catch(()=>({}));
+    if(!upload.ok || !result.url){
+      throw new Error(result.error || 'UPLOAD_FAILED');
+    }
+
+    msgLines.splice(1, 0, 'Imagen JPG del diseño (disponible por 24 horas): ' + result.url);
+    const whatsappUrl = 'https://wa.me/5493735302900?text=' + encodeURIComponent(msgLines.join('\n'));
+    whatsappWindow.location.replace(whatsappUrl);
+    help.textContent = 'Se abrió el chat directo con la imagen disponible por 24 horas. Revisá el pedido y tocá Enviar en WhatsApp.';
+  } catch(error) {
+    if(whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
+    if(error.message === 'POPUP_BLOCKED'){
+      help.textContent = 'Tu navegador bloqueó la nueva pestaña. Permití ventanas emergentes para este sitio y volvé a intentarlo.';
+      alert('Permití las ventanas emergentes para este sitio y volvé a tocar “Enviar por WhatsApp”.');
+    } else {
+      help.textContent = 'No se pudo subir la imagen. No se abrió WhatsApp y no se envió un pedido incompleto.';
+      alert('No se pudo preparar el enlace de la imagen. Revisá tu conexión e intentá nuevamente.');
+    }
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Enviar por WhatsApp';
+  }
+});
+resize(); loop();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

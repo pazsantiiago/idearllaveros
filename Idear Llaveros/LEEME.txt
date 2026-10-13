@@ -1,0 +1,16 @@
+# Idear Llaveros para Netlify
+
+Este paquete convierte el botón de pedido en un envío directo al chat de WhatsApp. La imagen frontal JPG se guarda en Netlify Blobs y el enlace vence a las 24 horas; una función programada elimina periódicamente las imágenes vencidas.
+
+## Archivos que faltan
+
+Copiá `idearlogo.png` y `mercadopago.png` dentro de `public/`, junto a `index.html`. El HTML los referencia con esos nombres. Este paquete se armó con el HTML disponible; esos PNG no estaban en la carpeta de Descargas al momento de prepararlo.
+
+## Publicarlo en tu proyecto existente
+
+1. Subí esta carpeta a un repositorio Git (por ejemplo GitHub) y conectá ese repositorio con el proyecto existente de Netlify `idearllaveros`.
+2. En la configuración de Build de Netlify, dejá el comando de build vacío y el directorio de publicación como `public`. `netlify.toml` ya declara la ruta de funciones.
+3. Hacé un nuevo deploy desde el repositorio. El botón necesita las funciones de Netlify; una publicación manual de archivos estáticos no las ejecuta.
+4. Probá un pedido desde el sitio publicado. Al tocar el botón se abre una pestaña, se sube la imagen y WhatsApp abre el chat directo al número configurado con los datos y el enlace. En WhatsApp todavía hay que tocar **Enviar**.
+
+El enlace es público para quien lo reciba, pero difícil de adivinar y válido por 24 horas. No requiere clave API en el HTML.
