@@ -632,14 +632,21 @@ $('order').addEventListener('click', async ()=>{
     const blob = renderFrontImage('image/jpeg');
     const formData = new FormData();
     formData.append('image', blob, 'llavero-idear-frontal.jpg');
-    const upload = await fetch('/.netlify/functions/design-image', {
-      method: 'POST',
-      body: formData,
-      signal: AbortSignal.timeout(20000)
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(()=>controller.abort(), 45000);
+    let upload;
+    try {
+      upload = await fetch('/.netlify/functions/design-image', {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
     const result = await upload.json().catch(()=>({}));
     if(!upload.ok || !result.url){
-      throw new Error(result.error || 'UPLOAD_FAILED');
+      throw new Error(result.error || 'No se recibió el enlace de la imagen.');
     }
 
     msgLines.splice(1, 0, 'Imagen JPG del diseño (disponible por 24 horas): ' + result.url);
@@ -651,8 +658,11 @@ $('order').addEventListener('click', async ()=>{
       help.textContent = 'La subida está tardando demasiado. Revisá tu conexión e intentá nuevamente.';
       alert('La imagen no llegó a subirse. Revisá tu conexión e intentá nuevamente.');
     } else {
-      help.textContent = 'No se pudo subir la imagen. No se abrió WhatsApp y no se envió un pedido incompleto.';
-      alert('No se pudo preparar el enlace de la imagen. Revisá tu conexión e intentá nuevamente.');
+      const detail = error.message && error.message !== 'Failed to fetch'
+        ? ' Detalle: ' + error.message
+        : '';
+      help.textContent = 'No se pudo subir la imagen. Revisá la conexión e intentá nuevamente.' + detail;
+      alert('No se pudo preparar el enlace de la imagen. Revisá tu conexión e intentá nuevamente.' + detail);
     }
   } finally {
     button.disabled = false;
