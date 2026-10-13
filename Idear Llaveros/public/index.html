@@ -625,24 +625,17 @@ $('order').addEventListener('click', async ()=>{
   ].join('\n');
   const button = $('order');
   const help = $('orderHelp');
-  let whatsappWindow = null;
   button.disabled = true;
-  button.textContent = 'Preparando imagen…';
+  button.textContent = 'Subiendo imagen…';
+  help.textContent = 'Generando el JPG frontal y subiéndolo por un enlace temporal…';
   try {
-    // Abrir la pestaña ahora evita que el navegador bloquee la navegación tras la subida.
-    whatsappWindow = window.open('about:blank', '_blank');
-    if(!whatsappWindow){
-      throw new Error('POPUP_BLOCKED');
-    }
-    whatsappWindow.document.title = 'Preparando WhatsApp';
-    whatsappWindow.document.body.textContent = 'Preparando tu pedido…';
-
     const blob = renderFrontImage('image/jpeg');
     const formData = new FormData();
     formData.append('image', blob, 'llavero-idear-frontal.jpg');
     const upload = await fetch('/.netlify/functions/design-image', {
       method: 'POST',
-      body: formData
+      body: formData,
+      signal: AbortSignal.timeout(20000)
     });
     const result = await upload.json().catch(()=>({}));
     if(!upload.ok || !result.url){
@@ -651,13 +644,12 @@ $('order').addEventListener('click', async ()=>{
 
     msgLines.splice(1, 0, 'Imagen JPG del diseño (disponible por 24 horas): ' + result.url);
     const whatsappUrl = 'https://wa.me/5493735302900?text=' + encodeURIComponent(msgLines.join('\n'));
-    whatsappWindow.location.replace(whatsappUrl);
-    help.textContent = 'Se abrió el chat directo con la imagen disponible por 24 horas. Revisá el pedido y tocá Enviar en WhatsApp.';
+    help.textContent = 'La imagen está lista. Abriendo WhatsApp…';
+    window.location.assign(whatsappUrl);
   } catch(error) {
-    if(whatsappWindow && !whatsappWindow.closed) whatsappWindow.close();
-    if(error.message === 'POPUP_BLOCKED'){
-      help.textContent = 'Tu navegador bloqueó la nueva pestaña. Permití ventanas emergentes para este sitio y volvé a intentarlo.';
-      alert('Permití las ventanas emergentes para este sitio y volvé a tocar “Enviar por WhatsApp”.');
+    if(error.name === 'TimeoutError' || error.name === 'AbortError'){
+      help.textContent = 'La subida está tardando demasiado. Revisá tu conexión e intentá nuevamente.';
+      alert('La imagen no llegó a subirse. Revisá tu conexión e intentá nuevamente.');
     } else {
       help.textContent = 'No se pudo subir la imagen. No se abrió WhatsApp y no se envió un pedido incompleto.';
       alert('No se pudo preparar el enlace de la imagen. Revisá tu conexión e intentá nuevamente.');
