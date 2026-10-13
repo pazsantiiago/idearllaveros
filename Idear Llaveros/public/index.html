@@ -306,11 +306,11 @@ function dispose(){
 
 // Rellena los huecos transparentes cerrados dentro de las letras para que
 // las contraformas (como el centro de la "o") queden apoyadas en material.
-function fillEnclosedTransparentRegions(ctx, left, top, right, bottom){
-  const x = Math.max(0, Math.floor(left));
-  const y = Math.max(0, Math.floor(top));
-  const width = Math.min(ctx.canvas.width, Math.ceil(right)) - x;
-  const height = Math.min(ctx.canvas.height, Math.ceil(bottom)) - y;
+function fillEnclosedTransparentRegions(ctx, left, top, right, bottom, pixelScale = 1){
+  const x = Math.max(0, Math.floor(left * pixelScale));
+  const y = Math.max(0, Math.floor(top * pixelScale));
+  const width = Math.min(ctx.canvas.width, Math.ceil(right * pixelScale)) - x;
+  const height = Math.min(ctx.canvas.height, Math.ceil(bottom * pixelScale)) - y;
   if(width <= 0 || height <= 0) return;
 
   const image = ctx.getImageData(x, y, width, height);
@@ -364,12 +364,13 @@ function update(){
   const innerHoleRadius = holeDiameter / 2;
 
   // Resoluciones de la textura 2D
-  const W = 1200, H = 600;
+  const W = 1200, H = 600, textureScale = 2;
   const CX = W / 2, CY = H / 2;
 
   /* === 1. DIBUJAR BASE Y AJUSTAR ÍCONO PEAGADO Y UNIDO === */
-  const bCan = document.createElement('canvas'); bCan.width = W; bCan.height = H;
+  const bCan = document.createElement('canvas'); bCan.width = W * textureScale; bCan.height = H * textureScale;
   const bCtx = bCan.getContext('2d');
+  bCtx.scale(textureScale, textureScale);
   
   bCtx.font = selectedFont.canvas;
   bCtx.lineJoin = 'round'; bCtx.lineCap = 'round';
@@ -429,7 +430,8 @@ function update(){
     CX - compositionWidth / 2 - maskPadding,
     CY - 190 - maskPadding,
     CX + compositionWidth / 2 + maskPadding,
-    CY + 190 + maskPadding
+    CY + 190 + maskPadding,
+    textureScale
   );
 
   // Posición del ojal
@@ -455,8 +457,9 @@ function update(){
   baseTex.colorSpace = THREE.SRGBColorSpace;
 
   /* === 2. DIBUJAR TEXTO / NOMBRE E ÍCONO (COLOR PERSONALIZABLE) === */
-  const tCan = document.createElement('canvas'); tCan.width = W; tCan.height = H;
+  const tCan = document.createElement('canvas'); tCan.width = W * textureScale; tCan.height = H * textureScale;
   const tCtx = tCan.getContext('2d');
+  tCtx.scale(textureScale, textureScale);
   tCtx.textAlign = 'center'; tCtx.textBaseline = 'middle';
   tCtx.fillStyle = textColor;
   tCtx.font = nameFont;
@@ -579,16 +582,59 @@ $('textColors').addEventListener('click', e=>{
 function renderFrontImage(mimeType = 'image/png'){
   const exportRenderer = new THREE.WebGLRenderer({antialias:true, alpha:true, preserveDrawingBuffer:true});
   exportRenderer.setPixelRatio(1);
-  exportRenderer.setSize(1600, 800, false);
+  const renderWidth = 2400, renderHeight = 1200;
+  exportRenderer.setSize(renderWidth, renderHeight, false);
   exportRenderer.outputColorSpace = THREE.SRGBColorSpace;
-  if(mimeType === 'image/jpeg') exportRenderer.setClearColor(0xffffff, 1);
+  exportRenderer.setClearColor(0xffffff, 0);
   const halfH = 1.84, halfW = halfH * 2;
   const frontCamera = new THREE.OrthographicCamera(-halfW, halfW, halfH, -halfH, 0.1, 100);
   frontCamera.position.set(0, 0, 9);
   frontCamera.lookAt(0, 0, 0);
   exportRenderer.render(scene, frontCamera);
-  const dataUrl = exportRenderer.domElement.toDataURL(mimeType, 0.94);
+
+  // Detecta los píxeles visibles y recorta el gran margen transparente del plano.
+  const gl = exportRenderer.getContext();
+  const pixels = new Uint8Array(renderWidth * renderHeight * 4);
+  gl.readPixels(0, 0, renderWidth, renderHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+  let minX = renderWidth, minY = renderHeight, maxX = -1, maxY = -1;
+  for(let y = 0; y < renderHeight; y++){
+    const row = y * renderWidth * 4;
+    for(let x = 0; x < renderWidth; x++){
+      if(pixels[row + x * 4 + 3] > 8){
+        if(x < minX) minX = x;
+        if(x > maxX) maxX = x;
+        if(y < minY) minY = y;
+        if(y > maxY) maxY = y;
+      }
+    }
+  }
+  if(maxX < minX || maxY < minY){
+    exportRenderer.dispose();
+    exportRenderer.forceContextLoss();
+    throw new Error('No se encontró el diseño para exportar.');
+  }
+
+  const padding = Math.ceil(Math.max(maxX - minX + 1, maxY - minY + 1) * 0.035);
+  const cropX = Math.max(0, minX - padding);
+  const cropY = Math.max(0, renderHeight - 1 - maxY - padding);
+  const cropRight = Math.min(renderWidth, maxX + 1 + padding);
+  const cropBottom = Math.min(renderHeight, renderHeight - minY + padding);
+  const cropWidth = cropRight - cropX;
+  const cropHeight = cropBottom - cropY;
+  const outputScale = Math.min(3000 / Math.max(cropWidth, cropHeight), 1.25);
+  const outputCanvas = document.createElement('canvas');
+  outputCanvas.width = Math.max(1, Math.round(cropWidth * outputScale));
+  outputCanvas.height = Math.max(1, Math.round(cropHeight * outputScale));
+  const outputCtx = outputCanvas.getContext('2d');
+  if(mimeType === 'image/jpeg'){
+    outputCtx.fillStyle = '#ffffff';
+    outputCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+  }
+  outputCtx.drawImage(exportRenderer.domElement, cropX, cropY, cropWidth, cropHeight,
+    0, 0, outputCanvas.width, outputCanvas.height);
+  const dataUrl = outputCanvas.toDataURL(mimeType, 0.98);
   exportRenderer.dispose();
+  exportRenderer.forceContextLoss();
   const encoded = dataUrl.split(',')[1];
   const binary = atob(encoded);
   const bytes = new Uint8Array(binary.length);
@@ -609,19 +655,11 @@ $('save').addEventListener('click', async ()=>{
 });
 
 $('order').addEventListener('click', async ()=>{
-  const customerName = $('name').value.trim() || 'Nicole';
   const msgLines = [
     'Hola, Idear Gráfica. Quiero este llavero 3D personalizado.',
-    'Nombre o texto: ' + customerName,
-    'Tipografía: ' + (FONT_OPTIONS[$('font').value] || FONT_OPTIONS.pacifico).label,
-    'Color del texto: ' + textColorName,
-    'Color de la base: ' + colorName,
-    'Ícono: ' + (emoji || 'Ninguno'),
     'Precio estándar: $2.500',
-    '',
     'Alias: grafica.idear.mp',
-    'Titular: Grisel Marine Hahs',
-    'Compartiré el comprobante una vez hecho el pago.'
+    'Titular: Grisel Marine Hahs'
   ];
   const button = $('order');
   const help = $('orderHelp');
